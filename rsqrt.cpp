@@ -22,7 +22,7 @@ dd_real rsqrt2(const dd_real &x){
 	double y0 = 1.0 / sqrt(to_double(x));
 	double h  = (1.0 - x * dd_real::sqr(y0)).x[0];
 	// dd_real y1 = y0 + y0 * mul_pwr2(h, 0.5);
-	dd_real y1 = dd_real::add(y0,  y0 * (0.5 * h));
+	dd_real y1 = dd_real::add(y0,  (0.5 * y0) * h);
 	return y1;
 }
 
