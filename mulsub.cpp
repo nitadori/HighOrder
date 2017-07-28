@@ -6,6 +6,7 @@
 #include <qd/qd_real.h>
 #include <qd/qd_inline.h>
 
+// compute a * b - 1.0 accurately
 dd_real mult_sub1(const dd_real &a, const dd_real &b){
 	double p0, p1, p2, p3;
 	double q0, q1, q2;
@@ -58,8 +59,8 @@ qd_real rsqrt_qd2(const dd_real &x){
 dd_real rsqrt_dd1(const dd_real &x){
 	double y0 = 1.0 / sqrt(to_double(x));
 	dd_real h = mult_sub1(x,  dd_real::sqr(y0));
-	// dd_real c = dd_real(-0.5, (3./8.) * to_double(h));
-	dd_real c = -0.5 + (3./8.)*h;
+	dd_real c = dd_real(-0.5, (3./8.) * to_double(h));
+	// dd_real c = -0.5 + (3./8.)*h;
 
 	dd_real y1 = y0 + (y0 * (h * c));
 
