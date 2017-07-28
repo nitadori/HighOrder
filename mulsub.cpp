@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdlib>
+#include <cassert>
 #include <qd/dd_real.h>
 #include <qd/dd_inline.h>
 #include <qd/qd_real.h>
@@ -40,6 +41,35 @@ dd_real mult_sub1_qd(const dd_real &a, const dd_real &b){
 			qd_real(a) * b - 1.0);
 }
 
+qd_real rsqrt_qd1(const dd_real &x){
+	double y0 = 1.0 / sqrt(to_double(x));
+	dd_real h = mult_sub1(x,  dd_real::sqr(y0));
+	// dd_real c = dd_real(-0.5, (3./8.) * to_double(h));
+	dd_real c = -0.5 + (3./8.)*h;
+
+	qd_real y1 = y0 + qd_real(y0 * (h * c));
+
+	return y1;
+}
+qd_real rsqrt_qd2(const dd_real &x){
+	return 1.0 / sqrt(qd_real(x));
+}
+
+dd_real rsqrt_dd1(const dd_real &x){
+	double y0 = 1.0 / sqrt(to_double(x));
+	dd_real h = mult_sub1(x,  dd_real::sqr(y0));
+	// dd_real c = dd_real(-0.5, (3./8.) * to_double(h));
+	dd_real c = -0.5 + (3./8.)*h;
+
+	dd_real y1 = y0 + (y0 * (h * c));
+
+	return y1;
+}
+dd_real rsqrt_dd2(const dd_real &x){
+	return to_dd_real(
+			1.0 / sqrt(qd_real(x)));
+}
+
 int main(){
 	using std::cout;
 	using std::endl;
@@ -49,6 +79,7 @@ int main(){
 	for(int i=0; i<10; i++){
 
 		dd_real x  = ddrand();
+#if 0
 		double  y  = 1.0 / std::sqrt(to_double(x));
 		dd_real y2 = dd_real::sqr(y);
 		dd_real h1 = mult_sub1   (x, y2);
@@ -60,6 +91,24 @@ int main(){
 		printf("%A %A\n", h1.x[0], h1.x[1]);
 		printf("%A %A\n", h2.x[0], h2.x[1]);
 		puts("");
+#else
+		dd_real y1 = rsqrt_dd1(x);
+		dd_real y2 = rsqrt_dd2(x);
+		cout.precision(32);
+		cout << y1 << endl;
+		cout << y2 << endl;
+		printf("%A %A\n", y1.x[0], y1.x[1]);
+		printf("%A %A\n", y2.x[0], y2.x[1]);
+		puts("");
+#endif
+	}
+
+	for(int i=0; i<1000000; i++){
+		dd_real x  = ddrand();
+		dd_real y1 = rsqrt_dd1(x);
+		dd_real y2 = rsqrt_dd2(x);
+
+		assert(y1 == y2);
 	}
 
 	return 0;
