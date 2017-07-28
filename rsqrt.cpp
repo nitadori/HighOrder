@@ -51,6 +51,17 @@ dd_real rsqrt4(const dd_real &x){
 	return y1;
 }
 
+dd_real rsqrt5(const dd_real &x){
+	double y0 = 1.0 / sqrt(to_double(x));
+	double h = to_double(1.0 - x * dd_real::sqr(y0));
+	dd_real y1 = dd_real::add( y0,  y0 * (h * (0.5 + h * (3./8.))) );
+	return y1;
+}
+
+dd_real rsqrt_qd(const dd_real &x){
+	return to_dd_real(1.0 / sqrt(qd_real(x)));
+}
+
 
 template <typename F>
 void accruracy_check(const dd_real &x, F fun){
@@ -58,16 +69,19 @@ void accruracy_check(const dd_real &x, F fun){
 	dd_real h = 1.0 - x * sqr(y);
 
 	qd_real yq = 1.0 / sqrt(qd_real(x));
-	double err = to_double(y - yq) * sqrt(to_double(x));
+	double qerr = to_double(y - yq) * sqrt(to_double(x));
+	double derr = to_double(y - to_dd_real(yq)) * sqrt(to_double(x));
 
-	std::cout << y << " " << h << " " << err << std::endl;
+	printf("%A %A\n", y.x[0], y.x[1]);
+
+	std::cout << y << " " << h << " " << qerr << " " << derr << std::endl;
 }
 
 int main(){
 	using std::cout;
 	using std::endl;
 
-	srand(20170727);
+	srand(20170728);
 
 	for(int i=0; i<10; i++){
 
@@ -84,10 +98,12 @@ int main(){
 
 		cout << y << " " << h << endl;
 		*/
-		accruracy_check(x, rsqrt1); 
+		// accruracy_check(x, rsqrt1); 
 		accruracy_check(x, [](const dd_real &x){ return 1.0 / sqrt(x); }); 
 		accruracy_check(x, rsqrt2); 
-		accruracy_check(x, rsqrt3); 
-		accruracy_check(x, rsqrt4); 
+		// accruracy_check(x, rsqrt3); 
+		// accruracy_check(x, rsqrt4); 
+		accruracy_check(x, rsqrt5); 
+		accruracy_check(x, rsqrt_qd); 
 	}
 }
