@@ -1,0 +1,104 @@
+mult_by_c(c) := if 1=c then printf(false, "") else printf(false, "~d.0*", c);
+
+gencode(fp, name, p) := block([],
+		printf(fp, "template <class SYS, typename real_type, typename vect_type>~%", p),
+		printf(fp, "void calc_force_on_i_p~d(SYS &sys, const int nbody, const int i, const real_type eps2) {~%", p),
+		for k:0 while k<p do printf(fp, "vect_type acc~d(real_type(0));~%", k),
+		for k:0 while k<p do printf(fp, "vect_type icoord~d = sys.template get_coord<~d>(i);~%", k, k),
+		printf(fp, "for(int j=0; j<nbody; j++){~%"),
+		for k:0 while (k<p) do 
+			printf(fp, "vect_type dr~d = sys.template get_coord<~d>(j) - icoord~d;~%", k,k,k),
+		printf(fp, "~%"),
+		printf(fp, "real_type s0 = eps2 + (dr0*dr0);~%"),
+		printf(fp, "if(eps2==s0) continue;~%"),
+		for k:1 while (k<p) do block(
+		 	printf(fp, "real_type s~d = (dr0*dr~d)", k, k),
+		 	for i:1 while (i<=(k-1)/2) do 
+				printf(fp, " +~d.0*(dr~d*dr~d)", binomial(k,i), i, k-i),
+			if 0=mod(k,2) then 
+				/*
+				printf(fp, " +~d*(dr~d*dr~d)", binomial(k,k/2)/2, k/2, k/2),
+				*/
+				printf(fp, " +~a(dr~d*dr~d)", mult_by_c(binomial(k,k/2)/2), k/2, k/2),
+			printf(fp, ";~%"),
+	    true),	   
+		printf(fp, "~%"),
+		printf(fp, "#if 1~%"),
+		printf(fp, "real_type rinv1 = rsqrt(s0);~%"),
+		printf(fp, "real_type rinv2 = rinv1 * rinv1;~%"),
+		printf(fp, "#else~%"),
+		printf(fp, "real_type rinv2 = 1.0 / s0;~%"),
+		printf(fp, "real_type rinv1 = sqrt(rinv2);~%"),
+		printf(fp, "#endif~%"),
+		printf(fp, "real_type rinv3 = rinv1 * rinv2;~%"),
+		/*
+		printf(fp, "rinv2 *= -3;~%"),
+		*/
+		printf(fp, "rinv3 *= sys.get_mass(j);~%"),
+		printf(fp, "~%"),
+		/*
+		for k:1 while (k<p) do 
+			for i:1 while (i<k) do block([c],
+				c : 3*binomial(k-1,i) + 2*binomial(k-1,i-1),
+				/* printf(fp, "// (~d,~d) -> ~a~%", k, i, c), */
+				printf(fp, "const real_t cq~d~d = ~2d / real_t(3.0);~%", k, i, c),
+			true),
+		for k:1 while (k<p) do block(
+			printf(fp, "real_t q~d = rinv2 * (s~d", k, k),
+			for i:1 while (i<k) do
+				printf(fp, " + (cq~d~d*s~d)*q~d", k, i, k-i, i), 
+			printf(fp, ");~%"),
+		true),
+		*/
+		for k:1 while (k<p) do block(
+			printf(fp, "real_t q~d = rinv2 * (-3.0*s~d", k, k),
+			for i:1 while (i<k) do block([c],
+				c : 3*binomial(k-1,i) + 2*binomial(k-1,i-1),
+				printf(fp, " - (~a.0*s~d)*q~d", c, k-i, i), 
+			true),
+			printf(fp, ");~%"),
+		true),
+		printf(fp, "~%"),
+		for k:0 while (k<p) do block(
+			printf(fp, "acc~d += rinv3 * (dr~d", k, k),
+			for i:1 while (i<=k) do
+				/*
+				printf(fp, " +~d*q~d", binomial(k,i), i),
+				*/
+				printf(fp, " +(~aq~d)*dr~d", mult_by_c(binomial(k,i)), i, k-i),
+			printf(fp, ");~%"),
+		true),
+		printf(fp, "} // for(j) ~%"),
+		for k:0 while k<p do printf(fp, "sys.template set_force<~d>(i, acc~d);~%", k, k),
+		printf(fp, "} // end of function ~%"),
+	true);
+
+fp:openw("test2.h");
+gencode(fp, gderiv1, 2);
+close(fp);
+
+fp:openw("test3.h");
+gencode(fp, gderiv1, 3);
+close(fp);
+
+fp:openw("test4.h");
+gencode(fp, gderiv1, 4);
+close(fp);
+
+fp:openw("test5.h");
+gencode(fp, gderiv1, 5);
+close(fp);
+
+fp:openw("test6.h");
+gencode(fp, gderiv1, 6);
+close(fp);
+
+fp:openw("test7.h");
+gencode(fp, gderiv1, 7);
+close(fp);
+
+fp:openw("test8.h");
+gencode(fp, gderiv1, 8);
+close(fp);
+/*
+*/
