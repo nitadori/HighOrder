@@ -2,27 +2,20 @@
 #include <cassert>
 #include <cmath>
 #include <vector>
-#include <algorithm>
-
-struct CmpPtcl_dt{
-	bool operator()(const Particle &p1, const Particle &p2) const {
-		return (p1.dt < p2.dt);
-	}
-};
 
 struct NbodySystem{
 	long   nbody;
 	long   num_step,     num_bstep;
 	long   num_step_tot, num_bstep_tot;
 
-	typedef dd_real real_t;
-	typedef qvec3   vect_t;
+	typedef dd_real real_type;
+	typedef qvec3   vect_type;
 
-	real_t eps2;
-	real_t tsys;
-	real_t init_energy, prev_energy;
-	real_t dtmax;
-	real_t eta, eta_s;
+	real_type eps2;
+	real_type tsys;
+	real_type init_energy, prev_energy;
+	real_type dtmax;
+	real_type eta, eta_s;
 
 	std::vector<Particle>  ptcl;
 	std::vector<Predictor> pred;
@@ -71,7 +64,7 @@ struct NbodySystem{
 		}
 		fclose(fp);
 
-		const real_t eps = 4.0 / nbody;
+		const real_type eps = 4.0 / nbody;
 		this->eps2 = eps * eps;
 
 		num_step = num_bstep = 0;
@@ -79,31 +72,31 @@ struct NbodySystem{
 	}
 #endif
 
-	real_t get_mass(const int i) const {
+	real_type get_mass(const int i) const {
 		return pred[i].mass;
 	}
 
 	template <int p> 
-	vect_t get_coord(const int i) const {
+	vect_type get_coord(const int i) const {
 		return pred[i].coord[p];
 	}
 
 	template <int p> 
-	void set_force(const int i, const vect_t &f){
+	void set_force(const int i, const vect_type &f){
 		force[i].force[p] = f;
 	}
 
 	template <typename PTCL> // Particle or Predictor
-	real_t calc_energy(const std::vector<PTCL> &p){
-		real_t pe  = 0.0;
-		real_t ke2 = 0.0;
+	real_type calc_energy(const std::vector<PTCL> &p){
+		real_type pe  = 0.0;
+		real_type ke2 = 0.0;
 
 		for(int i=0; i<nbody; i++){
-			real_t phi = 0.0;
+			real_type phi = 0.0;
 			for(int j=i+1; j<nbody; j++){
-				vect_t dr = p[j].coord[0] - p[i].coord[0];
-				// real_t rinv = 1.0 / sqrt(eps2 + dr*dr);
-				real_t rinv = rsqrt(eps2 + dr*dr);
+				vect_type dr = p[j].coord[0] - p[i].coord[0];
+				// real_type rinv = 1.0 / sqrt(eps2 + dr*dr);
+				real_type rinv = rsqrt(eps2 + dr*dr);
 				phi -= p[j].mass * rinv;
 			}
 			pe += p[i].mass * phi;
@@ -115,17 +108,17 @@ struct NbodySystem{
 		return pe + 0.5 * ke2;
 	}
 
-	real_t calc_energy_from_ptcl(){
+	real_type calc_energy_from_ptcl(){
 		return calc_energy(ptcl);
 	}
-	real_t calc_energy_from_pred(){
+	real_type calc_energy_from_pred(){
 		return calc_energy(pred);
 	}
 
 	void calc_force_on_first_nact(int nact){
 #pragma omp parallel for
 		for(int i=0; i<nact; i++){
-			calc_force_on_i <NbodySystem, real_t, vect_t> 
+			calc_force_on_i <NbodySystem, real_type, vect_type> 
 				(*this, nbody, i, this->eps2);
 		}
 	}
@@ -141,7 +134,7 @@ struct NbodySystem{
 			}
 		}
 	}
-	void set_fixed_dt(const real_t dt){
+	void set_fixed_dt(const real_type dt){
 		for(int i=0; i<nbody; i++){
 			ptcl[i].tlast = tsys;
 			ptcl[i].dt = dt;
@@ -172,7 +165,7 @@ struct NbodySystem{
 			corr.commit     (ptcl[i]);
 		}
 	}
-	void integrate_pec_nth(const int n, const real_t dt){
+	void integrate_pec_nth(const int n, const real_type dt){
 		tsys += dt;
 		predict_all();
 		for(int iter=0; iter<n-1; iter++){
@@ -182,108 +175,4 @@ struct NbodySystem{
 		calc_force_on_first_nact(nbody);
 		correct_and_commit();
 	}
-	// METHODS FOR INDIVIDUAL TIMESTEP SCHEME
-#if 0
-	int count_nact(const real_t tnext) const {
-		int nact;
-		for(nact=0; nact<nbody; nact++){
-			if(tnext != ptcl[nact].tlast + ptcl[nact].dt)
-				break;
-		}
-		return nact;
-	}
-	real_t calc_dtlim(const real_t tnext) const {
-		real_t dtlim = dtmax;
-		real_t s = tnext / dtmax;
-		while(s != real_t(int(s))){
-			s *= 2.0;
-			dtlim *= 0.5;
-			assert(dtlim >= 1.0/(1LL<<32));
-		}
-		return dtlim;
-	}
-	void sort_ptcl(const int nact){
-		std::sort(&ptcl[0], &ptcl[nact], CmpPtcl_dt());
-	}
-
-
-	__attribute__((noinline))
-	void integrate_one_block(){
-		const real_t tnext = ptcl[0].tlast + ptcl[0].dt;
-		const real_t dtlim = calc_dtlim(tnext);
-		const int    nact  = count_nact(tnext);
-#if 0
-		printf("t = %f, nact = %6d, dtlim = %A\n", tsys, nact, dtlim);
-#endif
-		tsys = tnext;
-		predict_all();
-
-		calc_force_on_first_nact(nact);
-#ifdef LOCAL_PECEC
-		for(int i=0; i<nact; i++){
-			Corrector corr;
-			corr.correct    (ptcl[i], force[i]);
-			corr.feedback   (pred[i]);
-		}
-		calc_force_on_first_nact(nact);
-#endif
-
-		for(int i=0; i<nact; i++){
-			Corrector corr;
-#ifdef STABLE_INTERPOLATE
-			Corrector corr_stab;
-			corr_stab.interpolate_stab(ptcl[i], force[i]);
-#endif
-			corr.correct    (ptcl[i], force[i]);
-			corr.interpolate(ptcl[i], force[i]);
-			corr.commit     (ptcl[i]);
-
-			ptcl[i].calc_dt(eta, eta_s, dtlim);
-#ifdef STABLE_INTERPOLATE
-			corr_stab.overwrite_stab(ptcl[i]);
-#endif
-		}
-
-		sort_ptcl(nact);
-		// sort_ptcl(nact, dtlim);
-
-		num_step += nact;
-		num_bstep++;
-	}
-	void integrate_one_dtmax(){
-		const real_t tt = tsys + dtmax;
-		while(tsys < tt){
-			integrate_one_block();
-		}
-		assert(tsys == tt);
-
-
-		const real_t energy = calc_energy(ptcl);
-		const real_t de_glo =((init_energy - energy) / init_energy);
-		const real_t de_loc =((prev_energy - energy) / init_energy);
-		assert(de_glo < 1.0);
-		num_step_tot  += num_step;
-		num_bstep_tot += num_bstep;
-		const double nact_loc = double(num_step) / double(num_bstep);
-		const double nact_glo = double(num_step_tot) / double(num_bstep_tot);
-
-		fprintf(stderr, "t = %f\n", tsys);
-		fprintf(stderr, " steps: %ld %ld %ld %ld\n", num_bstep, num_step, num_bstep_tot, num_step_tot);
-		fprintf(stderr, " nact : %f %f\n", nact_loc, nact_glo);
-		fprintf(stderr, " de(local/global) : %+e %+e\n", to_double(de_loc), to_double(de_glo));
-
-		FILE *fp = stdout;
-		fprintf(fp, "%f %6ld %6ld %10ld %10ld  %8.2f %8.2f   %+e  %+e\n", 
-				tsys, 
-				num_bstep, num_step, 
-				num_bstep_tot, num_step_tot, 
-				nact_loc, nact_glo,
-				de_loc, de_glo); 
-		fflush(fp);
-
-		prev_energy = energy;
-		num_step  = 0;
-		num_bstep = 0;
-	}
-#endif
 };
