@@ -105,9 +105,25 @@ struct Corrector{
 		}
 		// fmid
 		{
-			fmid[3] = 1./8. * (-10. * fmn[0] + 10.* fpl[1] - 4. * fmn[2]);
-			fmid[5] = 1./8. * (  3. * fmn[0] -  3.* fpl[1] + 2. * fmn[2]);
-			fmid[4] = 1./8. *  (-fmn[1] + 2. * fpl[2]);
+			// fmid[3] = 1./8. * (-10. * fmn[0] + 10.* fpl[1] - 4. * fmn[2]);
+			// fmid[5] = 1./8. * (  3. * fmn[0] -  3.* fpl[1] + 2. * fmn[2]);
+			// fmid[4] = 1./8. *  (-fmn[1] + 2. * fpl[2]);
+			// even
+			{
+				qvec3 tmp  = fpl[2] - (1./2.) * fmn[1];
+				qvec3 evn0 = (1./4.) * tmp;
+				fmid[4] = evn0;
+			}
+			// odd
+			{
+				qvec3 tmp = fpl[1] - fmn[0];
+				// lower triangle
+				qvec3 odd0 = (1./2.) * tmp;
+				qvec3 odd1 = (-3./8.) * tmp + (1./4.) * fmn[2];
+				// upper triangle
+				fmid[3] = odd0 - 2.0 * odd1;
+				fmid[5] = odd1;
+			}
 		}
 		fright[3] = fmid[3] +  4.*fmid[4] + 10.*fmid[5];
 		fright[4] =               fmid[4] +  5.*fmid[5];
