@@ -5,7 +5,7 @@ struct Particle{
 	enum
 	{
 		NFORCE = 3,
-		ORDER  = 3*NFORCE,
+		ORDER  = 2*NFORCE,
 	};
 	unsigned long id;
 	dd_real dt;
