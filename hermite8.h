@@ -119,43 +119,35 @@ struct Corrector{
 			fpl[3] = c3 * (fr[3] + fl[3]);
 			fmn[3] = c3 * (fr[3] - fl[3]);
 		}
-		// fmid
+		// even
 		{
-			qvec3 evn[4], odd[4];
-			// evn[0] = fpl[0] - fmn[1] +    fpl[2] -    fmn[3];
-			evn[1] =          fmn[1] - 2.*fpl[2] + 3.*fmn[3];
-			// evn[2] =                      fpl[2] - 3.*fmn[3];
-			evn[3] =                                  fmn[3];
+			qvec3 tmp  = fpl[2] - (1./2.) * fmn[1];
 
-			odd[0] = fmn[0] - fpl[1] +    fmn[2] -    fpl[3];
-			// odd[1] =          fpl[1] - 2.*fmn[2] + 3.*fpl[3];
-			odd[2] =                      fmn[2] - 3.*fpl[3];
-			// odd[3] =                                  fpl[3];
+			// lower triangle
+			qvec3 evn0 = (1./4.) * tmp;
+			qvec3 evn1 = (1./8.) * (-tmp + fmn[3]);
 
-#if 0
-			fmid[0] = evn[0] + (1./16.) * ( 5.*evn[1] -    evn[3]);
-			fmid[2] = evn[2] + (1./16.) * (15.*evn[1] + 9.*evn[3]);
-#endif
-			fmid[4] =          (1./16.) * (-5.*evn[1] + 9.*evn[3]);
-			fmid[6] =          (1./16.) * (    evn[1] -    evn[3]);
-
-#if 0
-			fmid[1] = odd[1] + (1./16.) * ( 35.*odd[0] +  5.*odd[2]);
-			fmid[3] = odd[3] + (1./16.) * (-35.*odd[0] + 15.*odd[2]);
-#endif
-			fmid[5] =          (1./16.) * ( 21.*odd[0] -  5.*odd[2]);
-			fmid[7] =          (1./16.) * ( -5.*odd[0] +     odd[2]);
+			// upper triangle
+			fmid[4] = evn0 - 3.0 * evn1;
+			fmid[6] = evn1;
 		}
-#if 0
-		fright[0] = fmid[0] + fmid[1] +    fmid[2] +    fmid[3] +    fmid[4] +     fmid[5] +     fmid[6] +     fmid[7];
-		fright[1] =           fmid[1] + 2.*fmid[2] + 3.*fmid[3] + 4.*fmid[4] +  5.*fmid[5] +  6.*fmid[6] +  7.*fmid[7];
-		fright[2] =                        fmid[2] + 3.*fmid[3] + 6.*fmid[4] + 10.*fmid[5] + 15.*fmid[6] + 21.*fmid[7];
-		fright[3] =                                     fmid[3] + 4.*fmid[4] + 10.*fmid[5] + 20.*fmid[6] + 35.*fmid[7];
-#endif
-		fright[4] =                                                  fmid[4] +  5.*fmid[5] + 15.*fmid[6] + 35.*fmid[7];
-		fright[5] =                                                                fmid[5] +  6.*fmid[6] + 21.*fmid[7];
-		fright[6] =                                                                              fmid[6] +  7.*fmid[7];
-		fright[7] =                                                                                            fmid[7];
+		// odd
+		{
+			qvec3 tmp = fpl[1] - fmn[0];
+
+			// lower triangle
+			qvec3 odd0 = (1./4.) * ((-3./2.) * tmp + fmn[2]);
+			qvec3 odd1 = (1./8.) * ((5./2.) * tmp + (-2.0) * fmn[2] + fpl[3]);
+
+			// upper triangle
+			fmid[5] = odd0 - 3.0 * odd1;
+			fmid[7] = odd1;
+		}
+		// shift
+		fright[4] = fmid[4] +  5.*fmid[5] + 15.*fmid[6] + 35.*fmid[7];
+		fright[5] =               fmid[5] +  6.*fmid[6] + 21.*fmid[7];
+		fright[6] =                             fmid[6] +  7.*fmid[7];
+		fright[7] =                                           fmid[7];
 
 		// rescale
 		{
