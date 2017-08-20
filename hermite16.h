@@ -149,6 +149,7 @@ struct Corrector{
 			fpl[7] = c7 * (fr[7] + fl[7]);
 			fmn[7] = c7 * (fr[7] - fl[7]);
 		}
+#if 0
 		// fmid
 		{
 			qvec3 evn[8], odd[8];
@@ -173,6 +174,40 @@ struct Corrector{
 			fmid[13] = (1./2048.) * (  3465.*odd[0] -  273.*odd[2] +  77.*odd[4] -  45.*odd[6]);
 			fmid[15] = (1./2048.) * (  -429.*odd[0] +   33.*odd[2] -   9.*odd[4] +   5.*odd[6]);
 		}
+#else
+		// even
+		{
+			qvec3 tmp  = fpl[2] - (1./2.) * fmn[1];
+
+			// lower triangle
+			qvec3 evn0 = (1./16.)  * ((5./4.)   * tmp + (-3./2.) * fmn[3] + fpl[4]);
+			qvec3 evn1 = (1./32.)  * ((-7./4.)  * tmp + (9./4)   * fmn[3] + (-2.0)  * fpl[4] +            fmn[5]);
+			qvec3 evn2 = (1./64.)  * ((21./8.)  * tmp + (-7./2.) * fmn[3] + (7./2.) * fpl[4] + (-5./2.) * fmn[5] +          fpl[6]);
+			qvec3 evn3 = (1./128.) * ((-33./8.) * tmp + (45./8.) * fmn[3] + (-6.0)  * fpl[4] + (5.0)    * fmn[5] + (-3.0) * fpl[6] + fmn[7]);
+
+			// upper triangle
+			fmid[8]  = evn0 - 5.0 * evn1 + 15.0 * evn2 - 35.0 * evn3;
+			fmid[10] =              evn1 -  6.0 * evn2 + 21.0 * evn3;
+			fmid[12] =                            evn2 -  7.0 * evn3;
+			fmid[14] =                                          evn3;
+		}
+		// odd
+		{
+			qvec3 tmp = fpl[1] - fmn[0];
+
+			// lower triangle
+			qvec3 odd0 = (1./16.)  * ((-35./8.)   * tmp + (15./4.)  * fmn[2] + (-5./2.)  * fpl[3] +           fmn[4]);
+			qvec3 odd1 = (1./32.)  * ((63./8)     * tmp + (-7.0)    * fmn[2] + (21./4)   * fpl[3] + (-3.0)  * fmn[4] +            fpl[5]);
+			qvec3 odd2 = (1./64.)  * ((-231./16.) * tmp + (105./8.) * fmn[2] + (-21./2.) * fpl[3] + (7.0)   * fmn[4] + (-7./2.) * fpl[5] +          fmn[6]);
+			qvec3 odd3 = (1./128.) * ((429./16.)  * tmp + (-99./4.) * fmn[2] + (165./8.) * fpl[3] + (-15.0) * fmn[4] + (9.0)    * fpl[5] + (-4.0) * fmn[6] + fpl[7]);
+
+			// upper triangle
+			fmid[9]  = odd0 - 5.0 * odd1 + 15.0 * odd2 - 35.0 * odd3;
+			fmid[11] =              odd1 -  6.0 * odd2 + 21.0 * odd3;
+			fmid[13] =                            odd2 -  7.0 * odd3;
+			fmid[15] =                                          odd3;
+		}
+#endif
 		fright[ 8] = fmid[8] + 9.*fmid[9] +  45.*fmid[10] + 165.*fmid[11] + 495.*fmid[12] + 1287.*fmid[13] + 3003.*fmid[14] + 6435.*fmid[15];
 		fright[ 9] =              fmid[9] +  10.*fmid[10] +  55.*fmid[11] + 220.*fmid[12] +  715.*fmid[13] + 2002.*fmid[14] + 5005.*fmid[15];
 		fright[10] =                             fmid[10] +  11.*fmid[11] +  66.*fmid[12] +  286.*fmid[13] + 1001.*fmid[14] + 3003.*fmid[15];
@@ -181,8 +216,6 @@ struct Corrector{
 		fright[13] =                                                                              fmid[13] +   14.*fmid[14] +  105.*fmid[15];
 		fright[14] =                                                                                               fmid[14] +   15.*fmid[15];
 		fright[15] =                                                                                                                fmid[15];
-#if 0 // 12th-order interpolation for stability
-#endif
 		// rescale
 		{
 			const dd_real hi = 1.0 / h;
