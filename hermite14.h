@@ -143,6 +143,7 @@ struct Corrector{
 			fpl[6] = c6 * (fr[6] + fl[6]);
 			fmn[6] = c6 * (fr[6] - fl[6]);
 		}
+#if 0
 		// fmid
 		{
 			qvec3 evn[7], odd[7];
@@ -165,6 +166,38 @@ struct Corrector{
 			fmid[11] = (1./1024.) * (-1638.*odd[0] +  154.*odd[2] -  54.*odd[4] +  42.*odd[6]);
 			fmid[13] = (1./1024.) * (  231.*odd[0] -   21.*odd[2] +   7.*odd[4] -   5.*odd[6]);
 		}
+#else
+		// even
+		{
+			qvec3 tmp  = fpl[2] - (1./2.) * fmn[1];
+
+			// lower triangle
+			qvec3 evn0 = (1./16.) * ((5./4.)  * tmp + (-3./2.) * fmn[3] + fpl[4]);
+			qvec3 evn1 = (1./32.) * ((-7./4.) * tmp + (9./4)   * fmn[3] + (-2.0)  * fpl[4] + fmn[5]);
+			qvec3 evn2 = (1./64.) * ((21./8.) * tmp + (-7./2.) * fmn[3] + (7./2.) * fpl[4] + (-5./2.) * fmn[5] + fpl[6]);
+
+			// upper triangle
+			fmid[8]  = evn0 - 5.0 * evn1 + 15.0 * evn2;
+			fmid[10] =              evn1 -  6.0 * evn2;
+			fmid[12] =                            evn2;
+		}
+		// odd
+		{
+			qvec3 tmp = fpl[1] - fmn[0];
+
+			// lower triangle
+			qvec3 odd0 = (1./8.)  * ((5./2.)     * tmp + (-2.0)    * fmn[2] +             fpl[3]);
+			qvec3 odd1 = (1./16.) * ((-35./8.)   * tmp + (15./4.)  * fmn[2] + (-5./2.)  * fpl[3] +          fmn[4]);
+			qvec3 odd2 = (1./32.) * ((63./8)     * tmp + (-7.0)    * fmn[2] + (21./4)   * fpl[3] + (-3.0) * fmn[4] + fpl[5]);
+			qvec3 odd3 = (1./64.) * ((-231./16.) * tmp + (105./8.) * fmn[2] + (-21./2.) * fpl[3] + (7.0) * fmn[4] + (-7./2.) * fpl[5] + fmn[6]);
+
+			// upper triangle
+			fmid[7]  = odd0 - 4.0 * odd1 + 10.0 * odd2 - 20.0 * odd3;
+			fmid[9]  =              odd1 - 5.0  * odd2 + 15.0 * odd3;
+			fmid[11] =                            odd2 -  6.0 * odd3;
+			fmid[13] =                                          odd3;
+		}
+#endif
 		fright[ 7] = fmid[7] +  8.*fmid[8] +  36.*fmid[9] + 120.*fmid[10] + 330.*fmid[11] + 792.*fmid[12] + 1716.*fmid[13];
 		fright[ 8] =               fmid[8] +   9.*fmid[9] +  45.*fmid[10] + 165.*fmid[11] + 495.*fmid[12] + 1287.*fmid[13];
 		fright[ 9] =                              fmid[9] +  10.*fmid[10] +  55.*fmid[11] + 220.*fmid[12] +  715.*fmid[13];
