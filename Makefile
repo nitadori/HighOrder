@@ -1,6 +1,6 @@
 CXX = g++ -O2 -Wall -mfma -Wa,-q -I ./
 
-eights: eight-4th eight-6th eight-8th eight-10th eight-12th #eight-14th eight-16th
+eights: eight-4th eight-6th eight-8th eight-10th eight-12th eight-14th #eight-16th
 
 eight-4th: eight.cpp nbodysystem.h hermite4.h
 	$(CXX) -DHERMITE_FOURTH $< -o $@
