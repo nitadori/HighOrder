@@ -145,6 +145,15 @@ struct NbodySystem{
 			pred[i].predict(tsys, ptcl[i]);
 		}
 	}
+	void round_predictor(){
+		for(int i=0; i<nbody; i++){
+			for(int j=0; j<Particle::NFORCE; j++){
+				pred[i].coord[j].x.x[1] = 0.0;
+				pred[i].coord[j].y.x[1] = 0.0;
+				pred[i].coord[j].z.x[1] = 0.0;
+			}
+		}
+	}
 	void correct_and_feedback(){
 		for(int i=0; i<nbody; i++){
 			Corrector corr;

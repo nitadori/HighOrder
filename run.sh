@@ -1,12 +1,12 @@
 for step in 2 4 8 16 32 64 128 256 512 1024
 do
 #  for order in 4 6 8 10 12
-  for order in 16
+  for order in 4 6 8 10 12 14 16
   do
     for npec in 1 2 3
 #	rm plot/${order}th-pec${npec}.dat
 	do
-      ./eight-${order}th ${step} ${npec} | grep grep >> plot/${order}th-pec${npec}.dat
+      ./eight-${order}th ${step} ${npec} | grep grep >> plot2/${order}th-pec${npec}.dat
 	done
   done
 #./eight-12th $step 1 | grep grep >> 12th-pec1.dat

@@ -1,4 +1,3 @@
-// eight-shaped 3-body problerm
 #include <cstdio>
 #include "vector3.h"
 
@@ -55,29 +54,32 @@ vector3<dd_real>::operator dvec3() const
 #include "nbodysystem.h"
 
 int main(int ac, char **av){
-	const dd_real dt = ac>1 ? 1./atoi(av[1]) : 1./1024.;
+	const dd_real dt = ac>1 ? 2.0/atof(av[1]) : 1./1024.;
 	const int npec   = ac>2 ? atoi(av[2])    : 1;
 	const int norbit = ac>3 ? atoi(av[3])    : 10;
+	const double e   = ac>4 ? atof(av[4])    : 0.1;
+
+	fprintf(stderr, "e = %f\n", e);
 
 	NbodySystem sys;
-	const int nbody = sys.nbody = 3;
+	const int nbody = sys.nbody = 2;
 
 	sys.ptcl .resize(nbody);
 	sys.pred .resize(nbody);
 	sys.force.resize(nbody);
 
+	const double rx = 1.0 + e;
+	const double vy = sqrt( (1.0 -e)/(1.0 + e) );
+
 	// position
-	sys.ptcl[0].coord[0] = qvec3( 0.97000436, -0.24308753, 0.0);
-	sys.ptcl[1].coord[0] = qvec3(-0.97000436, +0.24308753, 0.0);
-	sys.ptcl[2].coord[0] = qvec3(0.0,          0.0,        0.0);
+	sys.ptcl[0].coord[0] = qvec3(+rx, 0.0, 0.0);
+	sys.ptcl[1].coord[0] = qvec3(-rx, 0.0, 0.0);
 	// velocity
-	sys.ptcl[0].coord[1] = qvec3(-0.93240737/(-2.0),-0.86473146/(-2.0),0.0);
-	sys.ptcl[1].coord[1] = qvec3(-0.93240737/(-2.0),-0.86473146/(-2.0),0.0);
-	sys.ptcl[2].coord[1] = qvec3(-0.93240737,       -0.86473146,       0.0);
+	sys.ptcl[0].coord[1] = qvec3(0.0, +vy, 0.0);
+	sys.ptcl[1].coord[1] = qvec3(0.0, -vy, 0.0);
 	// mass
-	sys.ptcl[0].mass = 1.0;
-	sys.ptcl[1].mass = 1.0;
-	sys.ptcl[2].mass = 1.0;
+	sys.ptcl[0].mass = 4.0;
+	sys.ptcl[1].mass = 4.0;
 
 	sys.tsys = 0.0;
 
@@ -117,6 +119,7 @@ int main(int ac, char **av){
 				r0.x, r0.y, r1.x, r1.y, r2.x, r2.y);
 		// exit(0);
 #endif
+		// fprintf(stderr, "t = %e, dt = %e\n", to_double(sys.tsys) , to_double(dt));
 		if(sys.tsys > norbit*tperiod) break;
 	}
 	const dd_real e1 = sys.calc_energy_from_ptcl();
